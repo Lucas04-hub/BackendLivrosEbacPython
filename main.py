@@ -32,7 +32,7 @@ class Livro(BaseModel):
     autor_livro: str
     ano_livro: int
 
-@app.get("/lirvos")
+@app.get("/livros")
 def get_livros():
     if not meus_livrozinhos:
         return {"message": "Não existe nenhum livro!"}
