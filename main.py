@@ -19,11 +19,23 @@
 # Path = Rota
 # Query Strings = Adicionar informações atravez da propria URL inteira
 
+# Documentação Swagger -> Documentar os endpoints da nossa aplicação (da nossa API)
+
+# Olha, acessa minha documentação swagger nesse endpoint -> http://endpointdelivros/docs#/
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-app = FastAPI()
+app = FastAPI(
+    title="API de Livros",
+    description="API para gerenciar catálogo de livros.",
+    version="1.0.0",
+    contact={
+        "name":"Lucas Ribeiro",
+        "email":"lucasribeirodasilva@gmail.com"
+    }
+)
 
 meus_livrozinhos = {}
 
@@ -31,6 +43,10 @@ class Livro(BaseModel):
     nome_livro: str
     autor_livro: str
     ano_livro: int
+
+@app.get("/")
+def hello_world():
+    return{"Hello": "World"}
 
 @app.get("/livros")
 def get_livros():
