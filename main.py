@@ -50,7 +50,7 @@ def post_livros(id_livro: int, livro: Livro):
     if id_livro in meus_livrozinhos:
         raise HTTPException(status_code=400, detail="Esse livro já existe, meu parceiro!")
     else:
-        meus_livrozinhos[id_livro] = Livro.dict()
+        meus_livrozinhos[id_livro] = livro.dict()
         return {"message": "O livro foi criado com sucesso!"}
     
 @app.put("/atualiza/{id_livro}")
