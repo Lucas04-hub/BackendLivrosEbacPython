@@ -80,7 +80,7 @@ def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials
     start = (page - 1) * limit
     end = start + limit
 
-    livrs_paginados = [
+    livros_paginados = [
         {"id": id_livro, "nome_livro": livro_data["nome_livro"], "autor_livro": livro_data["autor_livro"], "ano livro": livro_data["ano_livro"]}
         for id_livro, livro_data in livros_ordenados[start:end]
     ]
@@ -89,7 +89,7 @@ def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials
         "page": page,
         "limit": limit,
         "total": len(meus_livrozinhos),
-        "livros": livrs_paginados
+        "livros": livros_paginados
     }
     
 
