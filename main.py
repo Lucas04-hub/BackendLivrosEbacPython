@@ -71,11 +71,11 @@ def hello_world():
 def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials = Depends(security)):
     if page < 1 or limit < 1:
         raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos!!!")
-    
+
     if not meus_livrozinhos:
         return {"message": "Não existe nenhum livro!!!"}
 
-    livros_ordenados = sorted(meus_livrozinhos.items(), key=lambda x: x(0))
+    livros_ordenados = sorted(meus_livrozinhos.items(), key=lambda x: x[0])
 
     start = (page - 1) * limit
     end = start + limit
