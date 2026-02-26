@@ -28,7 +28,17 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import Optional
 import secrets
-import os
+
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
+
+DATABSE_URL = "sqlite:///./livros.db"
+
+engine = create_engine(DATABSE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 app = FastAPI(
     title="API de Livros",
@@ -47,10 +57,28 @@ security = HTTPBasic()
 
 meus_livrozinhos = {}
 
+class LivroDB(Base):
+    __tablename__ = "livros"
+    id = Column(Integer, primary_key=True, index=True)
+    nome_livro = Column(String, index=True)
+    autor_livro = Column(String, index=True)
+    ano_livro = Column(Integer)
+
 class Livro(BaseModel):
     nome_livro: str
     autor_livro: str
     ano_livro: int
+
+Base.metadata.create_all(bind=engine)
+
+
+
+def sessao_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 def autenticar_meu_usuario(credentials: HTTPBasicCredentials = Depends(security)):
     is_username_correct = secrets.compare_digest(credentials.username, MEU_USUARIO)
@@ -68,43 +96,42 @@ def hello_world():
     return{"Hello": "World"}
 
 @app.get("/livros")
-def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials = Depends(security)):
+def get_livros(page: int = 1, limit: int = 10, Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
     if page < 1 or limit < 1:
         raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos!!!")
+    
+    livros = db.query(LivroDB).offset((page - 1) * limit).limit(limit).all()
 
-    if not meus_livrozinhos:
+    if not livros:
         return {"message": "Não existe nenhum livro!!!"}
 
-    livros_ordenados = sorted(meus_livrozinhos.items(), key=lambda x: x[0])
 
-    start = (page - 1) * limit
-    end = start + limit
-
-    livros_paginados = [
-        {"id": id_livro, "nome_livro": livro_data["nome_livro"], "autor_livro": livro_data["autor_livro"], "ano livro": livro_data["ano_livro"]}
-        for id_livro, livro_data in livros_ordenados[start:end]
-    ]
+    total_livros = db.query(LivroDB).count()
 
     return {
         "page": page,
         "limit": limit,
-        "total": len(meus_livrozinhos),
-        "livros": livros_paginados
+        "total": total_livros,
+        "livros": [{"id": livro.id, "nome_livro": livro.nome_livro, "autor_livro": livro.autor_livro, "ano_livro": livro.ano_livro} for livro in livros]
     }
     
-
 # id do livro
 # nome do livro
 # autor do livro
 # ano de lançamento do livro
 
 @app.post("/adiciona")
-def post_livros(id_livro: int, livro: Livro, credentials: HTTPBasicCredentials = Depends(security)):
-    if id_livro in meus_livrozinhos:
-        raise HTTPException(status_code=400, detail="Esse livro já existe, meu parceiro!")
-    else:
-        meus_livrozinhos[id_livro] = livro.dict()
-        return {"message": "O livro foi criado com sucesso!"}
+def post_livros(ivro: Livro, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
+    db_livro = db.query(LivroDB).filter(LivroDB.nome_livro == livro.nome_livro, LivroDB.autor_livro == livro.autor_livro).first()
+    if db_livro:
+        raise HTTPException(status_code=400, detail="Esse livro já existe dentro do banco de dados!!!")
+    
+    novo_livro = LivroDB(nome_livro=livro.nome_livro, autor_livro=livro.autor_livro, ano_livro=livro.ano_livro)
+    db.add(novo_livro)
+    db.commit()
+    db.refresh(novo_livro)
+
+    return {"messgae": "O livro foi criado com sucesso!"}
     
 @app.put("/livros/{id_livro}")
 def atualizar_livro(id_livro: int, livro: Livro):
