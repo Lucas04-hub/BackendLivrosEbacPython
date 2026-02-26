@@ -160,3 +160,9 @@ def delete_livro(id_livro: int, db: Session = Depends(sessao_db), credentials: H
     db.commit
     
     return {"message": "Seu livro foi deletado com sucesso!"}
+
+# ACID
+# ORM -> Object Relational Mapping
+# FastAPI / Django / Flask / Node / Express / Nest.js / Laravel / Spring Boot -> Frameworks Backends
+# Vantagens -> A gente vai ganhar agilidade no desenvolvimento
+# Desvantagens -> A gente pode perder performace no Banco de Dados
