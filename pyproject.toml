@@ -2,15 +2,15 @@
 name = "backend-livros-ebac-python"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Lucas"}
-]
+authors = [{name = "Lucas"}]
+package-mode = false
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi[standard] (>=0.129.0,<0.130.0)",
-    "sqlalchemy (>=2.0.47,<3.0.0)",
-    "aiosqlite (>=0.22.1,<0.23.0)"
+    "sqlalchemy (>=2.0.48,<3.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",
+    "fastapi (>=0.135.1,<0.136.0)",
+    "uvicorn (>=0.42.0,<0.43.0)"
 ]
 
 

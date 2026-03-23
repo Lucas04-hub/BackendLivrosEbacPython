@@ -1,17 +1,16 @@
-version: "3.8"
 
 services:
   app:
     build: .
-    container_name: livros-api
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - .:/main
     env_file:
       - .env
-    command: [ "poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-    deploy: 
-      replicas: 5
-      restart_policy:
-        condition: on-failure
+    command: 
+      [ "poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000" ]
+    environment:
+      - MEU_USUARIO=${MEU_USUARIO}
+      - MINHA_SENHA=${MINHA_SENHA}
+      - DATABASE_URL=${DATABASE_URL}
