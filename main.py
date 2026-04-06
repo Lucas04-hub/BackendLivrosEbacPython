@@ -155,45 +155,46 @@ async def get_livros(page: int = 1, limit: int = 10, db: Session = Depends(sessa
 # autor do livro
 # ano de lançamento do livro
 
-@app.post("/adiciona")
-async def post_livros(ivro: Livro, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
-    db_livro = db.query(LivroDB).filter(LivroDB.nome_livro == LivroDB.nome_livro, LivroDB.autor_livro == LivroDB.autor_livro).first()
+@app.post("/livros")
+async def post_livros(livro: Livro, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
+    db_livro = db.query(LivroDB).filter(
+        LivroDB.nome_livro == livro.nome_livro,
+        LivroDB.autor_livro == livro.autor_livro
+    ).first()
     if db_livro:
         raise HTTPException(status_code=400, detail="Esse livro já existe dentro do banco de dados!!!")
-    
-    novo_livro = LivroDB(nome_livro=LivroDB.nome_livro, autor_livro=LivroDB.autor_livro, ano_livro=LivroDB.ano_livro)
+    novo_livro = LivroDB(
+        nome_livro=livro.nome_livro,
+        autor_livro=livro.autor_livro,
+        ano_livro=livro.ano_livro
+    )
     db.add(novo_livro)
     db.commit()
     db.refresh(novo_livro)
-
-    return {"messgae": "O livro foi criado com sucesso!"}
+    return {"message": "O livro foi criado com sucesso!"}
     
 @app.put("/livros/{id_livro}")
-async def atualizar_livro(id_livro: int, livro: Livro, db: Session = Depends(sessao_db)):
+async def atualizar_livro(id_livro: int, livro: Livro, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
     db_livro = db.query(LivroDB).filter(LivroDB.id == id_livro).first()
     if not db_livro:
-        raise HTTPException(status_code=400, details="Este livro foi encontrado no seu banco de dados!")
-    
+        raise HTTPException(status_code=404, detail="Esse livro não foi encontrado.")
+
     db_livro.nome_livro = livro.nome_livro
     db_livro.autor_livro = livro.autor_livro
     db_livro.ano_livro = livro.ano_livro
 
     db.commit()
     db.refresh(db_livro)
+    return {"message": "Livro atualizado com sucesso!"}
 
-    return {"message": "O livro foi atualizado com sucesso!!!"}
-
-@app.delete("/deletar/{id_livro}")
-async def delete_livro(id_livro: int, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
-    db_livro = db.query(LivroDB).filter(LivroDB.id == id_livro).filter()
-
+@app.delete("/livros/{id_livro}")
+async def deletar_livro(id_livro: int, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
+    db_livro = db.query(LivroDB).filter(LivroDB.id == id_livro).first()
     if not db_livro:
-        raise HTTPException(status_code=404, detail="Este livro não foi encontrado no seu banco de dados!!!")
-    
+        raise HTTPException(status_code=404, detail="Esse livro não foi encontrado.")
     db.delete(db_livro)
-    db.commit
-    
-    return {"message": "Seu livro foi deletado com sucesso!"}
+    db.commit()
+    return {"message": "Livro removido com sucesso!"}
 
 # ACID
 # ORM -> Object Relational Mapping
