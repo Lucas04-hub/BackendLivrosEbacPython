@@ -29,6 +29,8 @@ from pydantic import BaseModel
 from typing import Optional
 import secrets
 import os
+import redis
+import json
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
@@ -45,6 +47,8 @@ DATABSE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABSE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 app = FastAPI(
     title="API de Livros",
@@ -77,6 +81,12 @@ class Livro(BaseModel):
     ano_livro: int
 
 Base.metadata.create_all(bind=engine)
+
+def salvar_livro_redis(livro_id: int, livro: Livro):
+    redis_client.set(f"livro:{livro_id}", json.dumps(livro.dict()))
+
+def deletar_livro_redis(livro_id: int):
+    redis_client.delete(f"livro:{livro_id}")
 
 
 
@@ -129,26 +139,59 @@ async def chamadas_externas():
         "resultado": [resultado1, resultado2, resultado3]
     }
 
+@app.get("/debug/redis")
+def ver_livros_redis():
+    chaves = redis_client.keys("livros:*")
+    livros = []
+
+    for chave in chaves:
+        valor = redis_client.get(chave)
+        ttl = redis_client.ttl(chave)
+
+        livros.append({"chave": chave, "valor": json.loads(valor), "ttl": ttl})
+
+    return livros
 
 @app.get("/livros")
-async def get_livros(page: int = 1, limit: int = 10, db: Session = Depends(sessao_db), credentials: HTTPBasicCredentials = Depends(security)):
+def get_livros(
+    page: int = 1,
+    limit: int = 100,
+    db: Session = Depends(sessao_db),
+    credentials: HTTPBasicCredentials = Depends(autenticar_meu_usuario)
+):
     if page < 1 or limit < 1:
-        raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos!!!")
+        raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos")
+    
+    cache_key = f"livros:page={page}&limit={limit}"
+    cached = redis_client.get(cache_key)
+
+    if cached:
+        return json.loads(cached)
     
     livros = db.query(LivroDB).offset((page - 1) * limit).limit(limit).all()
 
     if not livros:
-        return {"message": "Não existe nenhum livro!!!"}
-
-
+        return {"message": "Não existe livro nenhum!!"}
+    
     total_livros = db.query(LivroDB).count()
 
-    return {
+    resposta = {
         "page": page,
         "limit": limit,
-        "total": total_livros,
-        "livros": [{"id": livro.id, "nome_livro": livro.nome_livro, "autor_livro": livro.autor_livro, "ano_livro": livro.ano_livro} for livro in livros]
+        "total_livros": total_livros,
+        "Livros": [
+            {
+                "id": livro.db,
+                "nome_livro": livro.nome_livro,
+                "autor_livro": livro.autor_livro,
+                "ano_livro": livro.ano_livro
+            } for livro in livros
+        ]
     }
+
+    redis_client.setex(cache_key, 30, json.dumps(resposta))
+
+    return resposta
     
 # id do livro
 # nome do livro
@@ -171,6 +214,9 @@ async def post_livros(livro: Livro, db: Session = Depends(sessao_db), credential
     db.add(novo_livro)
     db.commit()
     db.refresh(novo_livro)
+
+    salvar_livro_redis(novo_livro.id, livro)
+
     return {"message": "O livro foi criado com sucesso!"}
     
 @app.put("/livros/{id_livro}")
@@ -185,6 +231,9 @@ async def atualizar_livro(id_livro: int, livro: Livro, db: Session = Depends(ses
 
     db.commit()
     db.refresh(db_livro)
+
+    salvar_livro_redis(db_livro.id, livro)
+
     return {"message": "Livro atualizado com sucesso!"}
 
 @app.delete("/livros/{id_livro}")
@@ -194,6 +243,9 @@ async def deletar_livro(id_livro: int, db: Session = Depends(sessao_db), credent
         raise HTTPException(status_code=404, detail="Esse livro não foi encontrado.")
     db.delete(db_livro)
     db.commit()
+
+    deletar_livro_redis(id_livro)
+
     return {"message": "Livro removido com sucesso!"}
 
 # ACID
