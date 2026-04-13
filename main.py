@@ -31,6 +31,10 @@ import secrets
 import os
 import redis
 import json
+from fastapi import BackgroundTasks
+from tasks import fatorial, somar
+from celery_app import celery_app
+from celery.result import AsyncResult
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
@@ -48,7 +52,10 @@ engine = create_engine(DATABSE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
 app = FastAPI(
     title="API de Livros",
@@ -137,6 +144,60 @@ async def chamadas_externas():
     return {
         "mensagem": "Todas as chamadas nas API's foram concluidas com sucesso",
         "resultado": [resultado1, resultado2, resultado3]
+    }
+
+@app.post("/calcular/soma")
+def calcular_soma(a: int, b: int):
+    tarefa = somar.delay(a,b)
+    redis_client.lpush("tarefas_ids", tarefa.id)
+    redis_client.ltrim("tarefas_ids", 0, 49)
+    return {
+        "task_id": tarefa.id,
+        "message":"Tarefa de soma enviada para execução!"
+    }
+
+@app.post("/calcular/fatorial")
+def calcular_fatorial(nn: int):
+    tarefa = fatorial.delay(n)
+    redis_client.lpush("tarefas_ids", tarefa.id)
+    redis_client.ltrim("tarefas_ids", 0, 49)
+
+    return {
+        "tasks_id": tarefa.id,
+        "message": "Tarefa de fatorial enviada para execução!"
+    }
+
+@app.get("/tarefas/recentes")
+def listar_tarefas_recentes():
+    ids = redis_client.lrange("tarefas_ids", 0, -1)
+    tarefas = []
+    for task_id in ids:
+        resultado = AsyncResult(task_id, app=celery_app)
+        tarefas.append({
+            "task_id": task_id,
+            "status": resultado.status,
+            "resultado": resultado.result if resultado.sucessful() else None
+        })
+
+    return {
+        "tarefas": tarefas
+    }
+
+@app.get("/tarefas/recentes")
+def listar_tarefas_recentes():
+    ids = redis_client.lrange("tarefas_ids", 0, -1)
+    tarefas = []
+
+    for task_id in ids:
+        resultado = AsyncResult(task_id, app=celery_app)
+        tarefas.append({
+            "task_id": task_id,
+            "status": resultado.status,
+            "resultado": resultado.result if resultado.successful() else None
+        })
+
+    return {
+        "tarefas": tarefas
     }
 
 @app.get("/debug/redis")
