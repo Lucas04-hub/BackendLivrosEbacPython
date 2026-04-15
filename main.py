@@ -32,9 +32,10 @@ import os
 import redis
 import json
 from fastapi import BackgroundTasks
-from tasks import fatorial, somar
+
 from celery_app import celery_app
 from celery.result import AsyncResult
+from tasks import fatorial, somar
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
@@ -157,15 +158,17 @@ def calcular_soma(a: int, b: int):
     }
 
 @app.post("/calcular/fatorial")
-def calcular_fatorial(nn: int):
-    tarefa = fatorial.delay(n)
-    redis_client.lpush("tarefas_ids", tarefa.id)
-    redis_client.ltrim("tarefas_ids", 0, 49)
-
-    return {
-        "tasks_id": tarefa.id,
-        "message": "Tarefa de fatorial enviada para execução!"
-    }
+def calcular_fatorial(n: int):
+    try:
+        tarefa = fatorial.delay(n)
+        redis_client.lpush("tarefas_ids", tarefa.id)
+        redis_client.ltrim("tarefas_ids", 0, 49)
+        return {
+            "task_id": tarefa.id,
+            "message": "Tarefa de fatorial enviada para execução!"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tarefas/recentes")
 def listar_tarefas_recentes():
