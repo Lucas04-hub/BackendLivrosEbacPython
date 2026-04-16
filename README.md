@@ -29,6 +29,8 @@ calcular_soma(x, y) – retorna a soma de dois números após simular uma demora
 calcular_fatorial(n) – retorna o fatorial de um número, também simulando workload.
 API FastAPI
 
+![Exemplo do arquivo tasks.py](Como-é-o-arquido-de-TaskPY.png)
+
 Em main.py, implemente dois endpoints POST:
 /calcular/soma: recebe dois números, dispara a task de soma.
 /calcular/fatorial: recebe um número, dispara a task de fatorial.

@@ -170,27 +170,13 @@ def calcular_fatorial(n: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/tarefas/recentes")
-def listar_tarefas_recentes():
-    ids = redis_client.lrange("tarefas_ids", 0, -1)
-    tarefas = []
-    for task_id in ids:
-        resultado = AsyncResult(task_id, app=celery_app)
-        tarefas.append({
-            "task_id": task_id,
-            "status": resultado.status,
-            "resultado": resultado.result if resultado.sucessful() else None
-        })
 
-    return {
-        "tarefas": tarefas
-    }
 
 @app.get("/tarefas/recentes")
 def listar_tarefas_recentes():
     ids = redis_client.lrange("tarefas_ids", 0, -1)
     tarefas = []
-
+    
     for task_id in ids:
         resultado = AsyncResult(task_id, app=celery_app)
         tarefas.append({
@@ -202,6 +188,8 @@ def listar_tarefas_recentes():
     return {
         "tarefas": tarefas
     }
+
+
 
 @app.get("/debug/redis")
 def ver_livros_redis():
