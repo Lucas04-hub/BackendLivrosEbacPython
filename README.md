@@ -46,3 +46,9 @@ uvicorn main:app --reload
 Testando a API
 
 Utilize um cliente HTTP (como Postman ou curl) para enviar requisições POST para os endpoints `/calcular/soma` e `/calcular/fatorial`. As tarefas são processadas em background pelo Celery e o retorno da API é imediato, com o `task_id` da tarefa.
+
+Exempos das tasks sendo rodadas no Insomnia pelo Celery:
+![Exemplo do arquivo](Tasks-sendo-executadas1.png)
+![Exemplo do arquivo](Tasks-sendo-executadas2.png)
+![Exemplo do arquivo](Tasks-sendo-executadas3.png)
+![Exemplo do arquivo](Tasks-sendo-executadas4.png)
