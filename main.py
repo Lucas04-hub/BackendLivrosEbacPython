@@ -37,6 +37,8 @@ from celery_app import celery_app
 from celery.result import AsyncResult
 from tasks import fatorial, somar
 
+from kafka_producer import enviar_evento
+
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -268,6 +270,11 @@ async def post_livros(livro: Livro, db: Session = Depends(sessao_db), credential
     db.refresh(novo_livro)
 
     salvar_livro_redis(novo_livro.id, livro)
+
+    enviar_evento("livro_eventos", {
+        "acao": "criar",
+        "livro": livro.dict()
+    })
 
     return {"message": "O livro foi criado com sucesso!"}
     
