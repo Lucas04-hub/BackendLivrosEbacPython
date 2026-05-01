@@ -19,7 +19,7 @@ def test_calcular_soma(mocker):
     }
 
     mock_redis_lpush.assert_called_once()
-    mock_redis_ltrm.assert_called_once()
+    mock_redis_ltrim.assert_called_once()
 
 
 def test_calcular_fatorial(mocker):

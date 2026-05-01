@@ -5,8 +5,8 @@ import pytest
 
 client = TestClient(app)
 
-os.environ("MEU_USUARIO") = "admin"
-os.environ("MINHA_SENHA") = "admin"
+os.environ["MEU_USUARIO"] = "admin"
+os.environ["MINHA_SENHA"] = "admin"
 
 @pytest.fixture(autouse=True)
 def mock_redis(mocker):
