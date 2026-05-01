@@ -9,6 +9,6 @@ def test_soma_dois_numeros1():
     assert resultado == 25
 
 def test_soma_dois_numeros2():
-    resultado = soma(10,5)
+    resultado = soma(20,5)
     print(resultado)
-    assert resultado == 15
+    assert resultado == 25
