@@ -3,8 +3,7 @@ package-mode = false
 name = "backend-livros-ebac-python"
 version = "0.1.0"
 description = ""
-authors = [{name = "Lucas"}]
-
+authors = [{ name = "Lucas" }]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,7 +17,6 @@ dependencies = [
     "pytest (>=9.0.3,<10.0.0)",
     "pytest-cov (>=7.1.0,<8.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
