@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout do Código
-      uses: actions/checkout@v3
+      - name: Checkout do Código
+        uses: actions/checkout@v3
 
-    - name: Instalação do Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Instalação do Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
-    - name: Instalação do Poetry
-      run: pip install poetry
+      - name: Instalação do Poetry
+        run: pip install poetry
 
-    - name: Instalação das Dependências
-      run: poetry install
+      - name: Instalação das Dependências
+        run: poetry install
 
     # Se quiser rodar testes, descomente as linhas abaixo:
     # - name: Execução de Testes
