@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do Código
+      uses: actions/checkout@v3
+
+    - name: Instalação do Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Instalação do Poetry
+      run: pip install poetry
+
+    - name: Instalação das Dependências
+      run: poetry install
+
+    # Se quiser rodar testes, descomente as linhas abaixo:
+    # - name: Execução de Testes
+    #   run: poetry run pytest
