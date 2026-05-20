@@ -23,8 +23,8 @@ jobs:
         run: pip install poetry
 
       - name: Instalação das Dependências
-        run: poetry install
+        run: poetry install --no-root --no-interaction
 
-    # Se quiser rodar testes, descomente as linhas abaixo:
-    # - name: Execução de Testes
-    #   run: poetry run pytest
+
+      - name: Execução de Testes
+        run: poetry run pytest
