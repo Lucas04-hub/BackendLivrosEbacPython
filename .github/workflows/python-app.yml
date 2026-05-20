@@ -25,6 +25,8 @@ jobs:
       - name: Instalação das Dependências
         run: poetry install --no-root --no-interaction
 
-
+        
       - name: Execução de Testes
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
         run: poetry run pytest
