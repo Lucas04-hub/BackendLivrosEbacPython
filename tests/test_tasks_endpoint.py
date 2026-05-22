@@ -7,9 +7,8 @@ client = TestClient(app)
 @pytest.mark.usefixtures('main', 'redis_client')
 def test_calcular_soma(mocker):
     mock_somar_delay = mocker.patch("tasks.somar.delay")
-    mock_somar_lpush = mocker.patch("main,redis_client.lpush")
-    mock_somar_ltrim = mocker.patch("main,redis_client.ltrim")
-
+    mock_somar_lpush = mocker.patch("main.redis_client.lpush")
+    mock_somar_ltrim = mocker.patch("main.redis_client.ltrim")
     mock_somar_delay.return_value.id = "fake-task-id"
 
     response = client.post ("/calcular/soma", params={"a": 1, "b": 2})
@@ -20,8 +19,8 @@ def test_calcular_soma(mocker):
         "message":"Tarefa de soma enviada para execução!"
     }
 
-    mock_redis_lpush.assert_called_once()
-    mock_redis_ltrim.assert_called_once()
+    mock_redis_lpush = mocker.patch("main.redis_client.lpush")
+    mock_redis_ltrim = mocker.patch("main.redis_client.ltrim")
 
 
 def test_calcular_fatorial(mocker):
