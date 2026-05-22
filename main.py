@@ -120,7 +120,7 @@ def autenticar_meu_usuario(credentials: HTTPBasicCredentials = Depends(security)
 
 @app.get("/")
 def hello_world():
-    return{"Hello": "World"}
+    return{"Hello": "World!"}
 
 async def chamadas_externas_1():
     await asyncio.sleep(2)
