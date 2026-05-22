@@ -1,8 +1,10 @@
+import pytest
 from fastapi.testclient import TestClient
 from main import app
 
 client = TestClient(app)
 
+@pytest.mark.usefixtures('main', 'redis_client')
 def test_calcular_soma(mocker):
     mock_somar_delay = mocker.patch("tasks.somar.delay")
     mock_somar_lpush = mocker.patch("main,redis_client.lpush")
