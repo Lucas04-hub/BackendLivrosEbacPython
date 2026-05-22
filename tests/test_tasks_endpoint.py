@@ -25,8 +25,8 @@ def test_calcular_soma(mocker):
 
 def test_calcular_fatorial(mocker):
     mock_fatorial_delay = mocker.patch("tasks.fatorial.delay")
-    mock_redis_lpush = mocker.patch("main,redis_client.lpush")
-    mock_redis_ltrim = mocker.patch("main,redis_client.ltrim")
+    mock_redis_lpush = mocker.patch("main.redis_client.lpush")
+    mock_redis_ltrim = mocker.patch("main.redis_client.ltrim")
 
     mock_fatorial_delay.return_value.id = "fake-task-id"
 
