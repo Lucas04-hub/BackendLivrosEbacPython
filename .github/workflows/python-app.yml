@@ -38,4 +38,7 @@ jobs:
           REDIS_HOST: redis
           REDIS_PORT: 6379
         run: poetry run pytest
+
+      - name: Build Docker image
+        run: docker build -t fastapi-app:latest .
         
