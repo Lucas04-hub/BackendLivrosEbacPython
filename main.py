@@ -45,6 +45,10 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session
 
+import logging.config
+import yaml
+from elasticsearch import Elasticsearch
+
 import asyncio
 
 from dotenv import load_dotenv
@@ -59,6 +63,14 @@ Base = declarative_base()
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+
+es = Elasticsearch(hosts=["http://elasticsearch:9200"])
+with open("logging.yaml", "r") as f:
+    config = yaml.safe_load()
+    logging.config.dictConfig(config)
+
+logger = logging.getLogger(name)
+logger.info("API Inicializada com sucesso")
 
 app = FastAPI(
     title="API de Livros",
@@ -135,6 +147,7 @@ def autenticar_meu_usuario(credentials: HTTPBasicCredentials = Depends(security)
 
 @app.get("/")
 def hello_world():
+    logger.info("Alguém acessou a raiz da API.")
     return{"Hello": "World!"}
 
 async def chamadas_externas_1():
@@ -164,8 +177,8 @@ async def chamadas_externas():
         "resultado": [resultado1, resultado2, resultado3]
     }
 
-@app.post("/calcular/soma")
-def calcular_soma(a: int, b: int):
+#@app.post("/calcular/soma")
+#def calcular_soma(a: int, b: int):
     tarefa = somar.delay(a,b)
     redis_client.lpush("tarefas_ids", tarefa.id)
     redis_client.ltrim("tarefas_ids", 0, 49)
@@ -174,8 +187,8 @@ def calcular_soma(a: int, b: int):
         "message":"Tarefa de soma enviada para execução!"
     }
 
-@app.post("/calcular/fatorial")
-def calcular_fatorial(n: int):
+#@app.post("/calcular/fatorial")
+#def calcular_fatorial(n: int):
     try:
         tarefa = fatorial.delay(n)
         redis_client.lpush("tarefas_ids", tarefa.id)
