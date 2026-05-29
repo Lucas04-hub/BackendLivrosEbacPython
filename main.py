@@ -48,6 +48,7 @@ from sqlalchemy.orm import Session
 import logging.config
 import yaml
 from elasticsearch import Elasticsearch
+from datetime import datetime
 
 import asyncio
 
@@ -59,17 +60,20 @@ engine = create_engine(DATABSE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
+ELASTICSEARCH_INDEX = os.getenv("ELASTICSEARCH_INDEX", "livros-logos")
+es_client = Elasticsearch([ELASTICSEARCH_URL])
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
+#REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+#REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+#redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
 es = Elasticsearch(hosts=["http://elasticsearch:9200"])
 with open("logging.yaml", "r") as f:
-    config = yaml.safe_load()
+    config = yaml.safe_load(f)
     logging.config.dictConfig(config)
 
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 logger.info("API Inicializada com sucesso")
 
 app = FastAPI(
@@ -116,11 +120,11 @@ class Livro(BaseModel):
 
 Base.metadata.create_all(bind=engine)
 
-def salvar_livro_redis(livro_id: int, livro: Livro):
-    redis_client.set(f"livro:{livro_id}", json.dumps(livro.dict()))
+# def salvar_livro_redis(livro_id: int, livro: Livro):
+#    redis_client.set(f"livro:{livro_id}", json.dumps(livro.dict()))
 
-def deletar_livro_redis(livro_id: int):
-    redis_client.delete(f"livro:{livro_id}")
+# def deletar_livro_redis(livro_id: int):
+#    redis_client.delete(f"livro:{livro_id}")
 
 
 
@@ -202,8 +206,8 @@ async def chamadas_externas():
 
 
 
-@app.get("/tarefas/recentes")
-def listar_tarefas_recentes():
+#@app.get("/tarefas/recentes")
+#def listar_tarefas_recentes():
     ids = redis_client.lrange("tarefas_ids", 0, -1)
     tarefas = []
     
@@ -221,8 +225,8 @@ def listar_tarefas_recentes():
 
 
 
-@app.get("/debug/redis")
-def ver_livros_redis():
+# @app.get("/debug/redis")
+# def ver_livros_redis():
     chaves = redis_client.keys("livros:*")
     livros = []
 
@@ -235,45 +239,51 @@ def ver_livros_redis():
     return livros
 
 @app.get("/livros")
-def get_livros(
-    page: int = 1,
-    limit: int = 100,
+def listar_livros(
+    page: int = 1, 
+    limit: int = 10, 
     db: Session = Depends(sessao_db),
     credentials: HTTPBasicCredentials = Depends(autenticar_meu_usuario)
 ):
     if page < 1 or limit < 1:
-        raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos")
-    
-    cache_key = f"livros:page={page}&limit={limit}"
-    cached = redis_client.get(cache_key)
+        raise HTTPException(status_code=400, detail="Page ou limit estão com valores inválidos!!!")
 
-    if cached:
-        return json.loads(cached)
-    
     livros = db.query(LivroDB).offset((page - 1) * limit).limit(limit).all()
 
     if not livros:
-        return {"message": "Não existe livro nenhum!!"}
-    
-    total_livros = db.query(LivroDB).count()
+        response = {"message": "Não existe livro nenhum!!"}
+    else:
+        total_livros = db.query(LivroDB).count()
+        response = {
+            "page": page,
+            "limit": limit,
+            "total": total_livros,
+            "livros": [
+                {
+                    "id": livro.id,
+                    "nome_livro": livro.nome_livro,
+                    "autor_livro": livro.autor_livro,
+                    "ano_livro": livro.ano_livro
+                } for livro in livros
+            ]
+        }
 
-    resposta = {
+    log = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "endpoint": "/livros",
+        "usuario": credentials.username,
         "page": page,
         "limit": limit,
-        "total_livros": total_livros,
-        "Livros": [
-            {
-                "id": livro.db,
-                "nome_livro": livro.nome_livro,
-                "autor_livro": livro.autor_livro,
-                "ano_livro": livro.ano_livro
-            } for livro in livros
-        ]
+        "status": "success" if livros else "not_found",
+        "total_livros": len(livros)
     }
 
-    redis_client.setex(cache_key, 30, json.dumps(resposta))
+    try:
+        es_client.index(index=ELASTICSEARCH_INDEX, body=log)
+    except Exception as e:
+        print(f"Erro ao enviar log para o Elasticsearch: {e}")
 
-    return resposta
+    return response
     
 # id do livro
 # nome do livro
