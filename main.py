@@ -307,11 +307,10 @@ async def post_livros(livro: Livro, db: Session = Depends(sessao_db), credential
     db.commit()
     db.refresh(novo_livro)
 
-    salvar_livro_redis(novo_livro.id, livro)
-
-    enviar_evento("livro_eventos", {
+    logger.info({
         "acao": "criar",
-        "livro": livro.dict()
+        "livro": livro.dict(),
+        "livro_id": novo_livro.id
     })
 
     return {"message": "O livro foi criado com sucesso!"}
@@ -329,7 +328,11 @@ async def atualizar_livro(id_livro: int, livro: Livro, db: Session = Depends(ses
     db.commit()
     db.refresh(db_livro)
 
-    salvar_livro_redis(db_livro.id, livro)
+    logger.info({
+        "acao": "atualizar",
+        "livro_id": id_livro,
+        "livro": livro.dict()
+    })
 
     return {"message": "Livro atualizado com sucesso!"}
 
@@ -341,7 +344,10 @@ async def deletar_livro(id_livro: int, db: Session = Depends(sessao_db), credent
     db.delete(db_livro)
     db.commit()
 
-    deletar_livro_redis(id_livro)
+    logger.info({
+        "acao": "deletar",
+        "livro_id": id_livro,
+    })
 
     return {"message": "Livro removido com sucesso!"}
 
