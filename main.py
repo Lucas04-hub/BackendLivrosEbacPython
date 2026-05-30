@@ -183,60 +183,60 @@ async def chamadas_externas():
 
 #@app.post("/calcular/soma")
 #def calcular_soma(a: int, b: int):
-    tarefa = somar.delay(a,b)
-    redis_client.lpush("tarefas_ids", tarefa.id)
-    redis_client.ltrim("tarefas_ids", 0, 49)
-    return {
-        "task_id": tarefa.id,
-        "message":"Tarefa de soma enviada para execução!"
-    }
+#    tarefa = somar.delay(a,b)
+#    redis_client.lpush("tarefas_ids", tarefa.id)
+#    redis_client.ltrim("tarefas_ids", 0, 49)
+#    return {
+#        "task_id": tarefa.id,
+#        "message":"Tarefa de soma enviada para execução!"
+#    }
 
 #@app.post("/calcular/fatorial")
 #def calcular_fatorial(n: int):
-    try:
-        tarefa = fatorial.delay(n)
-        redis_client.lpush("tarefas_ids", tarefa.id)
-        redis_client.ltrim("tarefas_ids", 0, 49)
-        return {
-            "task_id": tarefa.id,
-            "message": "Tarefa de fatorial enviada para execução!"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#    try:
+#        tarefa = fatorial.delay(n)
+#        redis_client.lpush("tarefas_ids", tarefa.id)
+#        redis_client.ltrim("tarefas_ids", 0, 49)
+#        return {
+#            "task_id": tarefa.id,
+#            "message": "Tarefa de fatorial enviada para execução!"
+#        }
+#    except Exception as e:
+#        raise HTTPException(status_code=500, detail=str(e))
 
 
 
 #@app.get("/tarefas/recentes")
 #def listar_tarefas_recentes():
-    ids = redis_client.lrange("tarefas_ids", 0, -1)
-    tarefas = []
+#    ids = redis_client.lrange("tarefas_ids", 0, -1)
+#    tarefas = []
     
-    for task_id in ids:
-        resultado = AsyncResult(task_id, app=celery_app)
-        tarefas.append({
-            "task_id": task_id,
-            "status": resultado.status,
-            "resultado": resultado.result if resultado.successful() else None
-        })
+#    for task_id in ids:
+#        resultado = AsyncResult(task_id, app=celery_app)
+#        tarefas.append({
+#            "task_id": task_id,
+#            "status": resultado.status,
+#            "resultado": resultado.result if resultado.successful() else None
+#        })
 
-    return {
-        "tarefas": tarefas
-    }
+#    return {
+#        "tarefas": tarefas
+#    }
 
 
 
 # @app.get("/debug/redis")
 # def ver_livros_redis():
-    chaves = redis_client.keys("livros:*")
-    livros = []
+#    chaves = redis_client.keys("livros:*")
+#    livros = []
 
-    for chave in chaves:
-        valor = redis_client.get(chave)
-        ttl = redis_client.ttl(chave)
+#    for chave in chaves:
+#        valor = redis_client.get(chave)
+#        ttl = redis_client.ttl(chave)
+#
+#        livros.append({"chave": chave, "valor": json.loads(valor), "ttl": ttl})
 
-        livros.append({"chave": chave, "valor": json.loads(valor), "ttl": ttl})
-
-    return livros
+#    return livros
 
 @app.get("/livros")
 def listar_livros(
