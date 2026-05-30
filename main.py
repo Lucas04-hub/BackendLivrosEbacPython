@@ -23,13 +23,13 @@
 
 # Olha, acessa minha documentação swagger nesse endpoint -> http://endpointdelivros/docs#/
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import Optional
 import secrets
 import os
-import redis
+
 import json
 from fastapi import BackgroundTasks
 
@@ -98,7 +98,7 @@ def autenticar_meu_usuario(credentials: HTTPBasicCredentials = Depends(security)
             detail="Usuário ou senha incorretos",
             headers={"WWW-Authenticate": "Basic"},
         )
-    return True
+    return credentials
 
 security = HTTPBasic()
 
@@ -146,7 +146,7 @@ def autenticar_meu_usuario(credentials: HTTPBasicCredentials = Depends(security)
             detail="Usuário ou senha incorretos",
             headers={"WWW-Authenticate": "Basic"},
         )
-    return True
+    return credentials
 
 @app.get("/")
 def hello_world():
@@ -180,7 +180,21 @@ async def chamadas_externas():
         "resultado": [resultado1, resultado2, resultado3]
     }
 
+@app.post("/calcular/soma")
+def calcular_soma(a: int, b: int):
+    tarefa = somar.delay(a, b)
+    return {
+        "task_id": tarefa.id,
+        "message": "Tarefa de soma enviada para execução!"
+    }
 
+@app.post("/calcular/fatorial")
+def calcular_fatorial(n: int):
+    tarefa = fatorial.delay(n)
+    return {
+        "task_id": tarefa.id,
+        "message": "Tarefa de fatorial enviada para execução!"
+    }
 
 @app.get("/livros")
 def listar_livros(
